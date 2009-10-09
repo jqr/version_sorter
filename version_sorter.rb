@@ -32,6 +32,23 @@ module VersionSorter
     list.sort.collect { |k| k[-1] }
   end
 
+  def string_sort_hash(list)
+    hash = list.inject({}) do |acc, v|
+      # Warning: assumes max version part size of 5 characters
+      acc[v.scan(/(\d+|[[:alpha:]]+)/).flatten.collect { |p| "%5s" % p }.join] = v
+      acc
+    end
+    hash.keys.sort.collect { |k| hash[k] }
+  end
+
+  def string_sort_array(list)
+    list = list.inject([]) do |acc, v|
+      # Warning: assumes max version part size of 5 characters
+      acc << [v.scan(/(\d+|[[:alpha:]]+)/).flatten.collect { |p| "%5s" % p }.join, v]
+    end
+    list.sort.collect { |k| k[-1] }
+  end
+
   def rsort(list)
     list.sort { |a, b| -versioncmp(a, b) }
   end
@@ -96,6 +113,20 @@ if $0 == __FILE__
       assert_equal sorted_versions, array_sort_array(versions)
     end
 
+    def test_string_sort_hash_sorts_verisons_correctly
+      versions = %w(1.0.9 1.0.10 2.0 3.1.4.2 1.0.9a)
+      sorted_versions = %w( 1.0.9 1.0.9a 1.0.10 2.0 3.1.4.2 )
+
+      assert_equal sorted_versions, string_sort_hash(versions)
+    end
+
+    def test_string_sort_array_sorts_verisons_correctly
+      versions = %w(1.0.9 1.0.10 2.0 3.1.4.2 1.0.9a)
+      sorted_versions = %w( 1.0.9 1.0.9a 1.0.10 2.0 3.1.4.2 )
+
+      assert_equal sorted_versions, string_sort_array(versions)
+    end
+
     def test_reverse_sorts_verisons_correctly
       versions = %w(1.0.9 1.0.10 2.0 3.1.4.2 1.0.9a)
       sorted_versions = %w( 3.1.4.2 2.0 1.0.10 1.0.9a 1.0.9 )
@@ -111,6 +142,8 @@ if $0 == __FILE__
     x.report("sort")             { count.times { VersionSorter.sort(versions) } }
     x.report("array_sort_hash")  { count.times { VersionSorter.array_sort_hash(versions) } }
     x.report("array_sort_array") { count.times { VersionSorter.array_sort_array(versions) } }
+    x.report("string_sort_array"){ count.times { VersionSorter.string_sort_array(versions) } }
+    x.report("string_sort_hash") { count.times { VersionSorter.string_sort_hash(versions) } }
   end
   puts
 
